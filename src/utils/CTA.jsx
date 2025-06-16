@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaUserPlus, FaUserCircle, FaArrowRight } from 'react-icons/fa';
-import Love from '../assets/Love.svg';
+import Love from '../assets/love.svg';
 import Sun from '../assets/Sun.svg';
 
 const CTA = ({ isLoggedIn = false, userName = "" }) => {
