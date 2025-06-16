@@ -13,7 +13,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
     exposedHeaders: ["Authorization"],
   })
@@ -33,21 +33,17 @@ require("./models/mockTestModel");
 require("./models/notebookModel");
 
 // MongoDB Connection
-const connectDB = async () => {
-  try {
-    await mongoose.connect(
-      process.env.MONGODB_URI || "mongodb://localhost:27017/your_database_name",
-      {}
-    );
+mongoose
+  .connect(
+    process.env.MONGODB_URI || "mongodb://localhost:27017/your_database_name",
+    {}
+  )
+  .then(() => {
     console.log("MongoDB connected successfully");
-  } catch (error) {
+  })
+  .catch((error) => {
     console.error("MongoDB connection error:", error);
-    process.exit(1); // Exit with failure
-  }
-};
-
-// Connect to database
-connectDB();
+  });
 
 // Define routes
 app.get("/", (req, res) => {
@@ -83,10 +79,13 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something broke!");
 });
 
-// Start server
-const PORT = process.env.PORT;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// For Vercel, we need to export the app as a module
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
+// Export for serverless
 module.exports = app;
