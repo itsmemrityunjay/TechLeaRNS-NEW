@@ -79,13 +79,12 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something broke!");
 });
 
-// For Vercel, we need to export the app as a module
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
+// Always listen on a port for platforms like Render
+// while still supporting serverless environments
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+});
 
-// Export for serverless
+// Export for serverless environments like Vercel
 module.exports = app;

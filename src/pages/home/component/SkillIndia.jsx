@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import SkillIndiaImage from '../../../assets/Skillindia.png'
+import SkillIndiaImage from '../../../assets/SkillIndia.png'
 import SkillIndiaLogo from '../../../assets/skill-india.png'
 import { FaHandshake, FaGraduationCap, FaLaptopCode, FaChartLine, FaUserTie } from 'react-icons/fa';
 
