@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "backend/index.js"
+    }
+  ],
+  "env": {
+    "MONGODB_URI": "mongodb+srv://amansinghrazzput:yqwRzrTXYTpYqZHD@techlearns.vbjtpeo.mongodb.net/",
+    "JWT_SECRET": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NTcyIiwibmFtZSI6IlRob2QgS2UgQmF0YW8iLCJpYXQiOjE1MTYyMzkwMjJ9.16XqlUzxgNeRBboyk0lkT5aTCZLbRlG0ePmDBDRHp7Y"
+  }
+}
