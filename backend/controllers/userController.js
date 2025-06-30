@@ -68,25 +68,38 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log("Login attempt:", { email, passwordProvided: !!password });
+
     // Find user by email
     const user = await User.findOne({ email });
+    console.log("User found:", !!user);
 
     // Check if user exists and password matches
     if (user && (await bcrypt.compare(password, user.password))) {
-      res.json({
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        isPremium: user.isPremium,
-        token: generateToken(user._id, "user"),
-      });
+      try {
+        const token = generateToken(user._id, "user");
+        console.log("Token generated successfully");
+
+        res.json({
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isPremium: user.isPremium,
+          token,
+        });
+      } catch (tokenError) {
+        console.error("Token generation error:", tokenError);
+        res
+          .status(500)
+          .json({ message: "Error generating authentication token" });
+      }
     } else {
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
