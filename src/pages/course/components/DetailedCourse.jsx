@@ -222,33 +222,72 @@ const DetailedCourse = () => {
             setEnrolling(true);
             setEnrollmentError(null);
 
-            await api.post(`/api/courses/${id}/enroll`, {
-                paymentCompleted: true,
-                paymentAmount: course.price
+            // Step 1: Create an order on your backend
+            const orderResponse = await api.post(`/api/payments/create-order`, {
+                courseId: id,
+                amount: course.price * 100 // Razorpay expects amount in paise
             });
 
-            setIsEnrolled(true);
+            const options = {
+                key: process.env.REACT_APP_RAZORPAY_KEY_ID || "rzp_test_USRBs9xzh6MqbM",
+                amount: course.price * 100, // Amount in paise
+                currency: "INR",
+                name: "TechLeaRNS",
+                description: `Enrollment for ${course.title}`,
+                order_id: orderResponse.data.id,
+                handler: async function (response) {
+                    try {
+                        // Step 2: Verify payment with your backend
+                        const verificationResponse = await api.post('/api/payments/verify', {
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature,
+                            courseId: id
+                        });
 
-            // Store enrollment in localStorage as a backup
-            const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
-            if (!enrolledCourses.includes(id)) {
-                enrolledCourses.push(id);
-                localStorage.setItem('enrolledCourses', JSON.stringify(enrolledCourses));
-            }
+                        // Step 3: If verification succeeds, enroll the user
+                        if (verificationResponse.status === 200) {
+                            const enrollResponse = await api.post(`/api/courses/${id}/enroll`, {
+                                paymentCompleted: true,
+                                paymentId: response.razorpay_payment_id
+                            });
 
-            setShowPaymentModal(false);
+                            setIsEnrolled(true);
+                            setShowPaymentModal(false);
 
-            // Show success notification
-            alert("Payment completed! You're now enrolled in this course.");
+                            // Store enrollment in localStorage as a backup
+                            const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
+                            if (!enrolledCourses.includes(id)) {
+                                enrolledCourses.push(id);
+                                localStorage.setItem('enrolledCourses', JSON.stringify(enrolledCourses));
+                            }
+
+                            alert("Payment successful! You're now enrolled in this course.");
+                        } else {
+                            setEnrollmentError("Payment verification failed. Please contact support.");
+                        }
+                    } catch (err) {
+                        console.error("Payment or enrollment error:", err);
+                        setEnrollmentError(err.response?.data?.message || "Payment verification failed. Please contact support.");
+                    } finally {
+                        setEnrolling(false);
+                    }
+                },
+                prefill: {
+                    name: currentUser?.firstName + " " + currentUser?.lastName || "",
+                    email: currentUser?.email || "",
+                    contact: currentUser?.phone || ""
+                },
+                theme: {
+                    color: "#013954"
+                }
+            };
+
+            const razorpay = new window.Razorpay(options);
+            razorpay.open();
         } catch (err) {
-            console.error('Enrollment error after payment:', err);
-
-            if (err.response?.status === 401) {
-                setEnrollmentError("Authentication failed. Please try logging in again.");
-            } else {
-                setEnrollmentError(err.response?.data?.message || 'Payment processed but enrollment failed');
-            }
-        } finally {
+            console.error('Payment initialization error:', err);
+            setEnrollmentError(err.response?.data?.message || 'Failed to initialize payment');
             setEnrolling(false);
         }
     };
@@ -290,19 +329,31 @@ const DetailedCourse = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
             >
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Premium Course</h3>
-                <p className="text-gray-600 mb-4">
-                    This is a premium course that requires payment to access.
-                </p>
-                <div className="bg-gray-50 p-4 rounded-md mb-4">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Complete Your Purchase</h3>
+
+                <div className="mb-5">
+                    <h4 className="font-medium text-gray-700 mb-2">Course Details:</h4>
+                    <p className="text-gray-600">{course?.title}</p>
+                    <p className="text-sm text-gray-500">by {course?.createdBy ? `${course.createdBy.firstName} ${course.createdBy.lastName}` : 'Instructor'}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-md mb-5">
                     <div className="flex justify-between mb-2">
                         <span>Course Fee:</span>
                         <span className="font-medium">₹{course?.price || 0}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span>Total:</span>
-                        <span className="font-bold">₹{course?.price || 0}</span>
+                    <div className="flex justify-between mb-2">
+                        <span>Taxes:</span>
+                        <span className="font-medium">₹{Math.round(course?.price * 0.18) || 0}</span>
                     </div>
+                    <div className="border-t pt-2 mt-2 flex justify-between">
+                        <span className="font-bold">Total Amount:</span>
+                        <span className="font-bold">₹{Math.round(course?.price * 1.18) || 0}</span>
+                    </div>
+                </div>
+
+                <div className="text-sm text-gray-500 mb-5">
+                    <p>Click the Pay button below to process your payment securely via Razorpay.</p>
                 </div>
 
                 <div className="flex justify-between">
@@ -317,7 +368,7 @@ const DetailedCourse = () => {
                         className="px-4 py-2 bg-[#f99e1c] text-white rounded-md hover:bg-[#f99e1c]/90"
                         disabled={enrolling}
                     >
-                        {enrolling ? 'Processing...' : `Pay ₹${course?.price || 0}`}
+                        {enrolling ? 'Processing...' : `Pay ₹${Math.round(course?.price * 1.18) || 0}`}
                     </button>
                 </div>
             </motion.div>

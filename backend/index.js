@@ -60,6 +60,7 @@ const competitionRoutes = require("./routes/competitionRoutes");
 const mockTestRoutes = require("./routes/mockTestRoutes");
 const notebookRoutes = require("./routes/notebookRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const paymentRoutes = require("./routes/paymentRoutes"); // Add this with your other route imports
 
 // Use routes
 app.use("/api/users", userRoutes);
@@ -72,6 +73,7 @@ app.use("/api/mock-tests", mockTestRoutes);
 app.use("/api/notebooks", notebookRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/mocktests", mockTestRoutes);
+app.use("/api/payments", paymentRoutes); // Add this with your other route uses
 
 // Error handling middleware
 app.use((err, req, res, next) => {

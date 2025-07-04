@@ -403,6 +403,7 @@ const enrollInCourse = async (req, res) => {
   try {
     const courseId = req.params.id;
     const userId = req.userId; // This comes from the auth middleware
+    const { paymentCompleted, paymentId } = req.body; // Add these fields from request body
 
     console.log(`Enrolling user ${userId} in course ${courseId}`);
 
@@ -430,11 +431,27 @@ const enrollInCourse = async (req, res) => {
         .json({ message: "Already enrolled in this course" });
     }
 
-    // Check if course is premium and user has premium access
+    // For premium courses, require payment verification
     if (course.isPremium && !user.isPremium && !user.belowPoverty?.verified) {
-      return res.status(403).json({
-        message: "Premium membership required to access this course",
-      });
+      // If payment is required but not completed, return error
+      if (!paymentCompleted) {
+        return res.status(402).json({
+          message: "Payment required for this premium course",
+        });
+      }
+
+      // If payment is marked as completed but no paymentId, return error
+      if (!paymentId) {
+        return res.status(400).json({
+          message: "Payment ID is required for premium course enrollment",
+        });
+      }
+
+      // Optional: Verify payment ID exists in your payment records
+      // const paymentRecord = await Payment.findOne({ paymentId });
+      // if (!paymentRecord) {
+      //   return res.status(400).json({ message: "Invalid payment ID" });
+      // }
     }
 
     // Create enrollment object for user
@@ -444,6 +461,12 @@ const enrollInCourse = async (req, res) => {
       progress: 0,
       completed: false,
     };
+
+    // If this was a paid enrollment, add payment information
+    if (paymentId) {
+      enrollment.paymentId = paymentId;
+      enrollment.isPaid = true;
+    }
 
     // Update user's registeredCourses
     if (!user.registeredCourses) {
@@ -480,6 +503,7 @@ const enrollInCourse = async (req, res) => {
       message: "Successfully enrolled in course",
       courseId: course._id,
       courseName: course.title,
+      isPaid: !!paymentId,
       enrollmentDate: new Date(),
     });
   } catch (error) {
