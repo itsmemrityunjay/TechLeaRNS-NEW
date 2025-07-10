@@ -2,6 +2,8 @@ const User = require("../models/userModel");
 const Course = require("../models/courseModel");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
+const dotenv = require("dotenv")
+dotenv.config()
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
