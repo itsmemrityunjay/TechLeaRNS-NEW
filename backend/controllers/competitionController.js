@@ -98,6 +98,15 @@ const createCompetition = async (req, res) => {
 // @access  Public
 const getCompetitions = async (req, res) => {
   try {
+    // Check database connection first
+    if (mongoose.connection.readyState !== 1) {
+      console.error("Database not connected, readyState:", mongoose.connection.readyState);
+      return res.status(500).json({ 
+        message: "Database connection issue",
+        readyState: mongoose.connection.readyState
+      });
+    }
+
     // Parse query parameters
     const { category, status, difficulty } = req.query;
     const query = {};
@@ -106,17 +115,23 @@ const getCompetitions = async (req, res) => {
     if (status) query.status = status;
     if (difficulty) query.difficulty = difficulty;
 
-    const competitions = await Competition.find(query)
-      .populate({
-        path: "hostedBy",
-        select: "name firstName lastName organizationName",
-      })
-      .sort({ startDate: -1 });
+    // Get competitions without population first to isolate issues
+    const competitions = await Competition.find(query).sort({ startDate: -1 });
+    
+    // Then populate if needed
+    const populatedCompetitions = await Competition.populate(competitions, {
+      path: "hostedBy",
+      select: "name firstName lastName organizationName"
+    });
 
-    res.json(competitions);
+    res.json(populatedCompetitions);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching competitions:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch competitions", 
+      error: error.message,
+      stack: process.env.NODE_ENV === "production" ? "🥞" : error.stack 
+    });
   }
 };
 
