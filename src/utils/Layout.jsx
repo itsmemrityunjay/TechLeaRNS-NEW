@@ -74,7 +74,7 @@ const Layout = ({ children }) => {
         <div className="flex flex-col min-h-screen bg-gray-50">
             {/* New top navigation bar with logo */}
             <div className="w-full bg-white shadow-sm z-20 sticky top-0">
-                <div className="container mx-auto ml-16 sm:ml-16 md:ml-24 py-4 flex items-center ">
+                <div className="container mx-auto ml-16 sm:ml-0 md:ml-24 py-4 flex items-center ">
                     <img
                         src={logo} onClick={() => window.location.href = '/'}
                         alt="TechLearns"
